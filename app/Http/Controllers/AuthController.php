@@ -16,13 +16,20 @@ class AuthController extends Controller
     // Processa a tentativa de login
     public function login(Request $request)
     {
-        // Valida se os campos foram preenchidos
-        $credenciais = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        // Validação com mensagens customizadas
+        $regras = [
+            'email' => 'required|email',
+            'password' => 'required',
+        ];
 
-        // Tenta logar o usuário
+        $mensagens = [
+            'email.required' => 'O campo e-mail é obrigatório.',
+            'email.email' => 'Por favor, insira um e-mail válido.',
+            'password.required' => 'A senha deve ser preenchida.',
+        ];
+
+        $credenciais = $request->validate($regras, $mensagens);
+
         if (Auth::attempt($credenciais)) {
             $request->session()->regenerate();
             return redirect()->intended('dashboard');

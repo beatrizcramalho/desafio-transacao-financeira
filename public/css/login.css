@@ -1,0 +1,47 @@
+/* public/css/login.css */
+body {
+    background-color: #f4f7f6;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    background-color: #ffffff;
+    width: 100%;
+    max-width: 400px;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 2px solid #eeeeee;
+    padding: 2rem;
+    text-align: center;
+}
+
+.btn-login {
+    background-color: #ff4b2b;
+    border: none;
+    padding: 0.8rem;
+    font-weight: bold;
+    color: white;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    background-color: #e63e1d;
+    transform: translateY(-2px);
+    color: white;
+}
+
+.divider {
+    height: 3px;
+    width: 60px;
+    background-color: #ff4b2b;
+    margin: 10px auto 0;
+}
