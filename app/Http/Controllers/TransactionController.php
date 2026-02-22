@@ -9,12 +9,11 @@ use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
+    // Retorna a lista de transações para o Dashboard principal
     public function index()
     {
-        // Busca todas as transações do banco de dados
-        $transacoes = Transaction::all();
+        $transacoes = Transaction::where('user_id', Auth::id())->get();
 
-        // Retorna a view 'dashboard' passando a lista de transacoes
         return view('transactions.dashboard', compact('transacoes'));
     }
 
@@ -60,5 +59,59 @@ class TransactionController extends Controller
         ]);
 
         return redirect()->route('dashboard')->with('sucesso', 'Transação criada com sucesso!');
+    }
+    
+    // Visualizar detalhes da transação
+    public function show(Transaction $transaction)
+    {
+        return view('transactions.show', compact('transaction'));
+    }
+
+    // Visualizar detalhes da transação para edição
+    public function edit(Transaction $transaction)
+    {
+        $transacoes = Transaction::where('user_id', Auth::id())->get();
+        return view('transactions.dashboard', [
+            'transacoes' => $transacoes,
+            'editar_transacao' => $transaction
+        ]);
+    }
+
+    // Editar transação
+    public function update(Request $request, Transaction $transaction)
+    {
+        // Limpeza idêntica ao que fizemos no store
+        $valorLimpo = str_replace(['.', ','], ['', '.'], $request->value);
+        $cpfLimpo = preg_replace('/[^0-9]/', '', $request->cpf);
+
+        $request->merge([
+            'value' => $valorLimpo,
+            'cpf' => $cpfLimpo
+        ]);
+
+        $request->validate([
+            'value' => 'required|numeric|min:0.01',
+            'cpf' => 'required|string|size:11',
+            'document_path' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+        ]);
+
+        $data = $request->only(['value', 'cpf']);
+
+        // Se ele subir um novo comprovante, substitui o antigo
+        if ($request->hasFile('document_path')) {
+            $data['document_path'] = $request->file('document_path')->store('comprovantes', 'public');
+        }
+
+        $transaction->update($data);
+
+        return redirect()->route('dashboard')->with('sucesso', 'Transação atualizada!');
+    }
+
+    // Excluir transação
+    public function destroy(Transaction $transaction)
+    {
+        $transaction->delete();
+
+        return redirect()->route('dashboard')->with('sucesso', 'Transação excluída com sucesso!');
     }
 }

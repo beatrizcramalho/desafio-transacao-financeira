@@ -14,7 +14,7 @@
 <body class="d-flex">
 
     <div class="sidebar p-3 d-flex flex-column">
-        <img src="{{ asset('img/logo.png') }}" alt="Logo" class="mb-4" style="height: 30px; object-fit: contain;">
+        <img src="{{ asset('img/favicon.png') }}" alt="Logo" class="mb-4" style="height: 30px; object-fit: contain;">
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item">
                 <a href="#" class="nav-link active">
@@ -45,26 +45,46 @@
 
                 <div class="list-group list-group-flush">
                     @forelse($transacoes as $transacao)
-                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
-                            <div>
-                                <span class="fw-bold text-dark">R$ {{ number_format($transacao->value, 2, ',', '.') }}</span>
-                                <span class="mx-2">-</span>
-                                <span class="badge rounded-pill 
-                                    {{ $transacao->status == 'Aprovada' ? 'bg-success' : ($transacao->status == 'Negada' ? 'bg-danger' : 'bg-warning text-dark') }}">
-                                    {{ $transacao->status }}
-                                </span>
-                                <span class="mx-2">-</span>
-                                <small class="text-muted">{{ $transacao->created_at->format('d/m/Y H:i') }}</small>
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-0 linha_transacao" 
+                            data-transaction='@json($transacao)'
+                            style="cursor: pointer;">
+                            <div class="d-flex flex-grow-1 p-3">
+                                <div>
+                                    <span class="fw-bold">R$ {{ number_format($transacao->value, 2, ',', '.') }}</span>
+                                    <span class="mx-2">-</span>
+                                    <span class="badge rounded-pill {{ $transacao->status == 'Aprovada' ? 'bg-success' : ($transacao->status == 'Negada' ? 'bg-danger' : 'bg-warning text-dark') }}">
+                                        {{ $transacao->status }}
+                                    </span>
+                                    <span class="mx-2">-</span>
+                                    <small class="text-muted">{{ $transacao->created_at->format('d/m/Y H:i') }}</small>
+                                </div>
                             </div>
-                            
-                            <div class="dropdown">
-                                <button class="btn btn-link text-dark" data-bs-toggle="dropdown">
+
+                            <div class="dropdown pe-3">
+                                <button class="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#">Ver</a></li>
-                                    <li><a class="dropdown-item" href="#">Editar</a></li>
-                                    <li><a class="dropdown-item text-danger" href="#">Excluir</a></li>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                    <li>
+                                        <a class="dropdown-item btn-trigger-show" href="javascript:void(0)">
+                                            <i class="bi bi-file-earmark-text me-2"></i> Detalhes
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('transactions.edit', $transacao->id) }}">
+                                            <i class="bi bi-pencil me-2"></i> Editar
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form action="{{ route('transactions.destroy', $transacao->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash me-2"></i> Excluir
+                                            </button>
+                                        </form>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -78,11 +98,12 @@
         </div>
     </div>
 
+    <!---------- MODAL CRIAR TRANSAÇÃO ---------->
     <div class="modal fade" id="modal_criar_transacao" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header border-bottom-0 p-4">
-                    <h5 class="modal-title fw-bold" id="modalLabel">Nova Transação</h5>
+                    <h5 class="modal-title fw-bold" id="titulo_modal_criar_transacao">Nova Transação</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 pt-0">
@@ -117,6 +138,40 @@
         </div>
     </div>
 
+    <!---------- MODAL DETALHES DA TRANSAÇÃO ---------->
+    <div class="modal fade" id="modal_exibe_transacao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom-0 p-4">
+                    <h5 class="modal-title fw-bold">Detalhes da Transação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 pt-0">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">VALOR</label>
+                        <p class="form-control-plaintext fw-bold" id="exibe_value"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">CPF DO PORTADOR</label>
+                        <p class="form-control-plaintext" id="exibe_cpf"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">STATUS</label>
+                        <p id="exibe_status"></p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-muted">COMPROVANTE</label>
+                        <br>
+                        <a href="#" id="abrir_comprovante" target="_blank" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-file-earmark-pdf"></i> Abrir em nova guia
+                        </a>
+                    </div>
+                    <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
@@ -128,26 +183,102 @@
                 
                 // Máscara para Valor (Dinheiro)
                 $('input[name="value"]').mask("#.##0,00", {reverse: true});
+
+                // Evento ao clicar na linha da transação ou no botão Detalhes
+                $('.linha_transacao, .btn-trigger-show').on('click', function(e) {
+                    if ($(e.target).closest('.dropdown').length && !$(e.target).hasClass('btn-trigger-show') && !$(e.target).closest('.btn-trigger-show').length) {
+                        return; 
+                    }
+
+                    e.preventDefault();
+                    
+                    let linha = $(this).hasClass('linha_transacao') ? $(this) : $(this).closest('.linha_transacao');
+                    let transacao = linha.data('transaction');
+                    
+                    exibe_transacao(transacao);
+                    
+                    if ($(this).hasClass('btn-trigger-show')) {
+                        $('.dropdown-toggle').dropdown('hide');
+                    }
+                });
+            });
+
+            // Previne erros ao fechar modais
+            $(document).on('hidden.bs.modal', '.modal', function () {
+                $('.modal-backdrop').remove();
+                $('body').css('overflow', 'auto');
+                $('body').css('padding-right', '0');
+            });
+
+            // Garantia de que o modal Criar Transação abrirá sempre "limpo"
+            $('#modal_criar_transacao').on('hidden.bs.modal', function () {
+                $(this).find('form').trigger('reset');
             });
         </script>
 
-        
         @if ($errors->any())
             <script>
-                //Abre o modal automaticamente após algum erro no preenchimento
+                //Abre o modal Criar Transação automaticamente após algum erro no preenchimento
                 window.addEventListener('load', function() {
-                    var myModal = new bootstrap.Modal(document.getElementById('modal_criar_transacao'));
-                    myModal.show();
+                    var modal_criar_transacao = new bootstrap.Modal(document.getElementById('modal_criar_transacao'));
+                    modal_criar_transacao.show();
                 });
             </script>
         @endif
 
         <script>
-            // Garantia de que o modal abrirá sempre "limpo"
-            $('#modal_criar_transacao').on('hidden.bs.modal', function () {
-                $(this).find('form').trigger('reset');
-            });
+           function exibe_transacao(transacao) {
+                let valor = parseFloat(transacao.value).toLocaleString('pt-br', {style: 'currency', currency: 'BRL'});
+                $('#exibe_value').text(valor);
+
+                let cpf = transacao.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                $('#exibe_cpf').text(cpf);
+                
+                $('#exibe_status').text(transacao.status);
+
+                if(transacao.document_path) {
+                    $('#abrir_comprovante').attr('href', '/storage/' + transacao.document_path);
+                    $('#div_comprovante').show();
+                } else {
+                    $('#div_comprovante').hide();
+                }
+
+                // Abre o modal de visualização
+                var exibe_modal = new bootstrap.Modal(document.getElementById('modal_exibe_transacao'));
+                exibe_modal.show();
+            }
         </script>
+            
+        @if(isset($editar_transacao))
+            <script>
+                $(document).ready(function() {
+                    // 1. Identifica o modal de criação/edição
+                    var modal_original = document.getElementById('modal_criar_transacao');
+                    var modal_editado = new bootstrap.Modal(modal_original);
+                    
+                    // 2. Altera o título e o destino do formulário
+                    $('#titulo_modal_criar_transacao').text('Editar Transação');
+                    var form = $('#modal_criar_transacao').find('form');
+                    form.attr('action', "{{ route('transactions.update', $editar_transacao->id) }}");
+                    
+                    // Adiciona o método PUT
+                    if(form.find('input[name="_method"]').length === 0){
+                        form.append('<input type="hidden" name="_method" value="PUT">');
+                    }
+
+                    // 3. Preenche os campos
+                    $('input[name="value"]').val("{{ number_format($editar_transacao->value, 2, ',', '.') }}").trigger('input');
+                    $('input[name="cpf"]').val("{{ $editar_transacao->cpf }}").trigger('input');
+                    
+                    // 4. Exibe o modal
+                    modal_editado.show();
+
+                    $('#modal_criar_transacao').on('hidden.bs.modal', function () {
+                        window.location.href = "{{ route('dashboard') }}";
+                    });
+                });
+            </script>
+        @endif
     @endpush
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"> </script>
