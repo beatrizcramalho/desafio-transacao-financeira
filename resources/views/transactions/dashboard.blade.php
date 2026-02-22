@@ -32,7 +32,9 @@
     <div class="flex-grow-1 p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold">Transações</h2>
-            <button class="btn btn-create px-4">Criar Transação</button>
+            <button type="button" class="btn btn-create px-4" data-bs-toggle="modal" data-bs-target="#modal_criar_transacao">
+                Criar Transação
+            </button>
         </div>
 
         <div class="card border-0 shadow-sm">
@@ -47,11 +49,12 @@
                             <div>
                                 <span class="fw-bold text-dark">R$ {{ number_format($transacao->value, 2, ',', '.') }}</span>
                                 <span class="mx-2">-</span>
-                                <span class="badge rounded-pill {{ $transacao->status == 'Aprovada' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                <span class="badge rounded-pill 
+                                    {{ $transacao->status == 'Aprovada' ? 'bg-success' : ($transacao->status == 'Negada' ? 'bg-danger' : 'bg-warning text-dark') }}">
                                     {{ $transacao->status }}
                                 </span>
                                 <span class="mx-2">-</span>
-                                <small class="text-muted">{{ $transacao->created_at->format('d/m/Y H:i:s') }}</small>
+                                <small class="text-muted">{{ $transacao->created_at->format('d/m/Y H:i') }}</small>
                             </div>
                             
                             <div class="dropdown">
@@ -75,6 +78,80 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="modal fade" id="modal_criar_transacao" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom-0 p-4">
+                    <h5 class="modal-title fw-bold" id="modalLabel">Nova Transação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 pt-0">
+                    <form action="{{ route('transactions.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Valor (R$)*</label>
+                            <input type="text" name="value" class="form-control @error('value') is-invalid @enderror" value="{{ old('value') }}" required>
+                            @error('value') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">CPF do Portador*</label>
+                            <input type="text" name="cpf" class="form-control @error('cpf') is-invalid @enderror" value="{{ old('cpf') }}" placeholder="000.000.000-00" required>
+                            @error('cpf') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small">Comprovante (PDF, JPG ou PNG)*</label>
+                            <input type="file" name="document_path" class="form-control @error('document_path') is-invalid @enderror" required>
+                            @error('document_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light w-100 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-create w-100">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+        <script>
+            $(document).ready(function(){
+                // Máscara para CPF
+                $('input[name="cpf"]').mask('000.000.000-00');
+                
+                // Máscara para Valor (Dinheiro)
+                $('input[name="value"]').mask("#.##0,00", {reverse: true});
+            });
+        </script>
+
+        
+        @if ($errors->any())
+            <script>
+                //Abre o modal automaticamente após algum erro no preenchimento
+                window.addEventListener('load', function() {
+                    var myModal = new bootstrap.Modal(document.getElementById('modal_criar_transacao'));
+                    myModal.show();
+                });
+            </script>
+        @endif
+
+        <script>
+            // Garantia de que o modal abrirá sempre "limpo"
+            $('#modal_criar_transacao').on('hidden.bs.modal', function () {
+                $(this).find('form').trigger('reset');
+            });
+        </script>
+    @endpush
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"> </script>
+    @stack('scripts')
+
 </body>
 </html>

@@ -17,6 +17,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/dashboard', [TransactionController::class, 'index'])
     ->name('dashboard')
     ->middleware('auth');
-    
+
 // Rota de Logout da Aplicação
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Rota para Criar Transação
+Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
