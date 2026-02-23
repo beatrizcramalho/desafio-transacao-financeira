@@ -64,23 +64,29 @@ class TransactionController extends Controller
     // Visualizar detalhes da transação
     public function show(Transaction $transaction)
     {
+        if ($transaction->user_id !== Auth::id()) { abort(403); }
+
         return view('transactions.show', compact('transaction'));
     }
 
     // Visualizar detalhes da transação para edição
     public function edit(Transaction $transaction)
     {
+        if ($transaction->user_id !== Auth::id()) { abort(403); }
+
         $transacoes = Transaction::where('user_id', Auth::id())->get();
-        return view('transactions.dashboard', [
-            'transacoes' => $transacoes,
-            'editar_transacao' => $transaction
-        ]);
+        
+        $editar_transacao = $transaction;
+
+        return view('transactions.dashboard', compact('transacoes', 'editar_transacao'));
     }
 
     // Editar transação
     public function update(Request $request, Transaction $transaction)
     {
-        // Limpeza idêntica ao que fizemos no store
+        if ($transaction->user_id !== Auth::id()) { abort(403); }
+
+        // 1. Limpeza dos dados (Sanitização)
         $valorLimpo = str_replace(['.', ','], ['', '.'], $request->value);
         $cpfLimpo = preg_replace('/[^0-9]/', '', $request->cpf);
 
@@ -89,12 +95,24 @@ class TransactionController extends Controller
             'cpf' => $cpfLimpo
         ]);
 
-        $request->validate([
+        // 2. Validação
+        $regras = [
             'value' => 'required|numeric|min:0.01',
             'cpf' => 'required|string|size:11',
             'document_path' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
-        ]);
+        ];
 
+        $mensagens = [
+            'value.required' => 'O valor é obrigatório.',
+            'value.numeric' => 'O formato do valor é inválido.',
+            'cpf.required' => 'O CPF é obrigatório.',
+            'cpf.size' => 'O CPF deve conter exatamente 11 números.',
+            'document_path.mimes' => 'O comprovante deve ser um arquivo PDF, JPG ou PNG.',
+        ];
+
+        $request->validate($regras, $mensagens);
+
+        // 3. Preparação dos dados para atualização
         $data = $request->only(['value', 'cpf']);
 
         // Se ele subir um novo comprovante, substitui o antigo
@@ -110,6 +128,8 @@ class TransactionController extends Controller
     // Excluir transação
     public function destroy(Transaction $transaction)
     {
+        if ($transaction->user_id !== Auth::id()) { abort(403); }
+
         $transaction->delete();
 
         return redirect()->route('dashboard')->with('sucesso', 'Transação excluída com sucesso!');

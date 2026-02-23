@@ -37,7 +37,7 @@
                     <label for="email" class="form-label small fw-bold">Seu e-mail*</label>
                     <input type="email" name="email" id="email" 
                         class="form-control form-control-lg @error('email') is-invalid @enderror" 
-                        placeholder="exemplo@email.com" value="{{ old('email') }}">
+                        placeholder="exemplo@email.com" value="{{ old('email') }}" required>
                     
                     @error('email')
                         <div class="text-danger small mt-1">
@@ -50,7 +50,7 @@
                     <label for="password" class="form-label small fw-bold">Sua senha*</label>
                     <input type="password" name="password" id="password" 
                         class="form-control form-control-lg @error('password') is-invalid @enderror" 
-                        placeholder="••••••••">
+                        placeholder="••••••••" required>
                     
                     @error('password')
                         <div class="text-danger small mt-1">

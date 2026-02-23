@@ -77,13 +77,11 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <form action="{{ route('transactions.destroy', $transacao->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="dropdown-item text-danger">
-                                                <i class="bi bi-trash me-2"></i> Excluir
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                                class="dropdown-item text-danger btn_deletar_transacao" 
+                                                data-url="{{ route('transactions.destroy', $transacao->id) }}">
+                                            <i class="bi bi-trash me-2"></i> Excluir
+                                        </button>
                                     </li>
                                 </ul>
                             </div>
@@ -99,7 +97,7 @@
     </div>
 
     <!---------- MODAL CRIAR TRANSAÇÃO ---------->
-    <div class="modal fade" id="modal_criar_transacao" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal fade" id="modal_criar_transacao" tabindex="-1" aria-labelledby="titulo_modal_criar_transacao" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header border-bottom-0 p-4">
@@ -124,7 +122,7 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-bold small">Comprovante (PDF, JPG ou PNG)*</label>
-                            <input type="file" name="document_path" class="form-control @error('document_path') is-invalid @enderror" required>
+                            <input type="file" name="document_path" class="form-control @error('document_path') is-invalid @enderror">
                             @error('document_path') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
@@ -172,6 +170,30 @@
         </div>
     </div>
 
+    <!---------- MODAL EXCLUIR TRANSAÇÃO ---------->
+    <div class="modal fade" id="modal_confirmar_exclusao_transacao" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Confirmar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                    <p class="mt-2">Deseja realmente excluir esta transação?</p>
+                </div>
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Não</button>
+                    <form id="confirmar_exclusao_transacao" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">Sim, excluir</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
@@ -201,6 +223,16 @@
                         $('.dropdown-toggle').dropdown('hide');
                     }
                 });
+
+                // Evento ao clicar no botão de excluir transação
+                $('.btn_deletar_transacao').on('click', function() {
+                    let url = $(this).data('url');
+                    
+                    $('#confirmar_exclusao_transacao').attr('action', url);
+
+                    var modal_confirmar_exclusao = new bootstrap.Modal(document.getElementById('modal_confirmar_exclusao_transacao'));
+                    modal_confirmar_exclusao.show();
+                });
             });
 
             // Previne erros ao fechar modais
@@ -214,20 +246,8 @@
             $('#modal_criar_transacao').on('hidden.bs.modal', function () {
                 $(this).find('form').trigger('reset');
             });
-        </script>
 
-        @if ($errors->any())
-            <script>
-                //Abre o modal Criar Transação automaticamente após algum erro no preenchimento
-                window.addEventListener('load', function() {
-                    var modal_criar_transacao = new bootstrap.Modal(document.getElementById('modal_criar_transacao'));
-                    modal_criar_transacao.show();
-                });
-            </script>
-        @endif
-
-        <script>
-           function exibe_transacao(transacao) {
+            function exibe_transacao(transacao) {
                 let valor = parseFloat(transacao.value).toLocaleString('pt-br', {style: 'currency', currency: 'BRL'});
                 $('#exibe_value').text(valor);
 
@@ -248,6 +268,16 @@
                 exibe_modal.show();
             }
         </script>
+
+        @if ($errors->any())
+            <script>
+                //Abre o modal Criar Transação automaticamente após algum erro no preenchimento
+                window.addEventListener('load', function() {
+                    var modal_criar_transacao = new bootstrap.Modal(document.getElementById('modal_criar_transacao'));
+                    modal_criar_transacao.show();
+                });
+            </script>
+        @endif
             
         @if(isset($editar_transacao))
             <script>
@@ -269,6 +299,16 @@
                     // 3. Preenche os campos
                     $('input[name="value"]').val("{{ number_format($editar_transacao->value, 2, ',', '.') }}").trigger('input');
                     $('input[name="cpf"]').val("{{ $editar_transacao->cpf }}").trigger('input');
+
+                    let comprovante_atual = "{{ $editar_transacao->document_path }}";
+                    if(comprovante_atual) {
+                        $('input[name="document_path"]').after(`
+                            <div id="aviso_comprovante_preenchido" class="form-text text-primary mt-1">
+                                <i class="bi bi-info-circle"></i> Já existe um comprovante salvo. 
+                                Deixe vazio para manter o atual ou selecione um novo para substituir.
+                            </div>
+                        `);
+                    }
                     
                     // 4. Exibe o modal
                     modal_editado.show();

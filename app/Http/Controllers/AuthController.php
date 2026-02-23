@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     // Exibe a tela de login
-    public function exibe_login()
+    public function exibeLogin()
     {
         return view('auth.login');
     }
