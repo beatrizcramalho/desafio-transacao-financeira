@@ -11,3 +11,7 @@
 Credenciais de Acesso:
 - E-mail: teste@sistema.com
 - Senha: senha123
+
+🎥 Demonstração
+Confira o funcionamento do sistema no vídeo abaixo:
+https://drive.google.com/file/d/1UJspeInM7AsmwCNhu0BPkYR3-7AHbeuw/view?usp=sharing
